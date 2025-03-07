@@ -199,7 +199,7 @@ st.bar_chart(class_distribution)
 # Balancing dataset
 class_0 = diabetes[diabetes['Outcome'] == 0]
 class_1 = diabetes[diabetes['Outcome'] == 1]
-class_0_reduced = class_0.sample(n=len(class_0) - 232, random_state=42)
+class_0_reduced = class_0.sample(n=len(class_0) - 200, random_state=42)
 diabetes_balanced = pd.concat([class_0_reduced, class_1])
 
 # Show balanced class distribution
@@ -207,9 +207,20 @@ st.subheader("Class Distribution After Balancing")
 balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
 st.bar_chart(balanced_class_distribution)
 
-
+results_df = pd.DataFrame(results)
 st.subheader("Model Performance")
 st.write(results_df)
+
+#Decision tree
+st.subheader("Decision tree result")
+if isinstance(best_model, Pipeline):
+    # Acceder al árbol de decisión en el pipeline
+    tree_model = best_model.named_steps['model']  # 'model' is the step name from the pipeline
+
+    # Graficar el árbol de decisión
+    plt.figure(figsize=(12, 8))  # Adjust the size of the plot
+    fig = plot_tree(tree_model, filled=True, feature_names=X.columns, rounded=True)
+    st.pyplot(fig)
 
 # Confusion matrix
 st.subheader("Confusion Matrix of Best Model")
