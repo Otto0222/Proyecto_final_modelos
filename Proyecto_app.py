@@ -291,12 +291,10 @@ plt.show()
 st.title("Diabetes Prediction Model Results")
 
 # Load dataset
-@st.cache_data
-def load_data():
-    path = "path_to_your_dataset/diabetes.csv"  # Update with the correct path
-    return pd.read_csv(path, na_values=['?'])
+# Title of the Streamlit app
+st.title("Diabetes Prediction Model Results")
 
-diabetes = load_data()
+diabetes = diabetes_balanced
 
 diabetes['Outcome'] = diabetes['Outcome'].astype(int)
 
@@ -320,12 +318,8 @@ st.subheader("Class Distribution After Balancing")
 balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
 st.bar_chart(balanced_class_distribution)
 
-# Load pre-trained model results (assuming you save them)
-@st.cache_data
-def load_model_results():
-    return pd.read_csv("model_results.csv")  # Save your model results as a CSV
 
-results_df = load_model_results()
+results_df = diabetes_balanced
 st.subheader("Model Performance")
 st.write(results_df)
 
