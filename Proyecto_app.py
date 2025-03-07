@@ -67,115 +67,6 @@ diabetes_balanced.dropna(inplace=True)
 X = diabetes_balanced.drop(columns=['Outcome'])  # 'Outcome' es la variable objetivo
 y = diabetes_balanced['Outcome']
 
-# División con StratifiedShuffleSplit para balancear clases
-sss = StratifiedShuffleSplit(n_splits=10, test_size=0.2, random_state=22)
-for train_index, test_index in sss.split(X, y):
-    X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-    y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-
-# Definir modelos y sus hiperparámetros
-models = {
-    "LogisticRegression": {
-        "model": LogisticRegression(),
-        "params": {
-            "model__C": [0.01, 0.1, 1, 10, 100],  # Añadimos más valores para C
-            "model__solver": ["liblinear", "saga"],  # Opción 'saga' para problemas grandes
-            "model__penalty": ["l1", "l2"],  # Probar diferentes penalizaciones
-            "model__max_iter": [100, 200]  # Iteraciones adicionales si es necesario
-        }
-    },
-    "RandomForest": {
-        "model": RandomForestClassifier(),
-        "params": {
-            "model__n_estimators": [50, 100, 200],  # Más árboles
-            "model__max_depth": [3, 5, 10, None],  # Profundidades adicionales
-            "model__min_samples_split": [2, 5, 10],  # Divisiones mínimas para cada nodo
-            "model__min_samples_leaf": [1, 2, 5],  # Hojas mínimas para cada nodo
-            "model__bootstrap": [True, False]  # Si usar bootstrap o no
-        }
-    },
-    "DecisionTree": {
-        "model": DecisionTreeClassifier(),
-        "params": {
-            "model__max_depth": [3, 5, 10, None],  # Más profundidades
-            "model__min_samples_split": [2, 5, 10],  # Divisiones mínimas
-            "model__min_samples_leaf": [1, 2, 5],  # Hojas mínimas
-            "model__criterion": ["gini", "entropy"]  # Diferentes criterios de división
-        }
-    }
-}
-
-# Ejecutar validación cruzada para cada modelo, eligiendo según Recall
-best_model = None
-best_score = 0
-results = []
-
-for name, config in models.items():
-    print(f"\n🔍 Evaluando {name} con validación cruzada...")
-
-    # Crear pipeline con estandarización + modelo
-    pipeline = Pipeline([("scaler", StandardScaler()), ("model", config["model"])])
-
-    # GridSearch con validación cruzada (CV=10)
-    grid_search = GridSearchCV(pipeline, config["params"], cv=10, scoring="recall", n_jobs=-1)
-    grid_search.fit(X_train, y_train)
-
-    # Guardar los resultados en un DataFrame
-    results.append({
-        "Modelo": name,
-        "Mejor Recall CV": grid_search.best_score_,
-        "Mejores Hiperparámetros": grid_search.best_params_
-    })
-
-    # Guardar el mejor modelo según recall
-    if grid_search.best_score_ > best_score:
-        best_score = grid_search.best_score_
-        best_model = grid_search.best_estimator_
-
-    print(f"✅ {name} - Mejor Recall en CV: {grid_search.best_score_:.4f}")
-
-# Convertir resultados en un DataFrame y mostrar
-results_df = pd.DataFrame(results)
-print("\nResultados de los Modelos y Mejores Hiperparámetros:")
-print(results_df)
-
-# Evaluar el mejor modelo en el conjunto de prueba
-y_pred = best_model.predict(X_test)
-test_accuracy = accuracy_score(y_test, y_pred)
-test_recall = recall_score(y_test, y_pred)  # Sensibilidad (recall)
-
-# Mostrar resultados finales
-print("\n🎯 Mejor modelo final:", best_model)
-print(f"🏆 Mejor Recall en validación: {best_score:.4f}")
-print(f"📊 Accuracy en test: {test_accuracy:.4f}")
-print(f"🔍 Sensibilidad (Recall) en test: {test_recall:.4f}")
-
-# Graficar el árbol de decisión en caso de que este sea el mejor modelo
-if isinstance(best_model, Pipeline) and isinstance(best_model.named_steps['model'], DecisionTreeClassifier):
-    # Access the decision tree classifier inside the pipeline
-    tree_model = best_model.named_steps['model']  # 'model' is the step name from the pipeline
-
-    # Plot the decision tree
-    plt.figure(figsize=(12, 8))  # Adjust the size of the plot
-    plot_tree(tree_model, filled=True, feature_names=X.columns, rounded=True)
-    plt.show()
-    
-    
-# Mostrar la matriz de confusión del modelo con mejor resultado
-# Matriz de confusión
-cm = confusion_matrix(y_test, y_pred)
-
-# Obtener el nombre del modelo de best_model
-model_name = best_model.named_steps["model"].__class__.__name__  # Obtener el nombre del modelo
-
-# Mostrar la matriz de confusión con un heatmap
-plt.figure(figsize=(6, 5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "Diabetes"], yticklabels=["No Diabetes", "Diabetes"])
-plt.title(f"Matriz de Confusión de {model_name}")  # Corregir el uso del f-string
-plt.xlabel("Predicción")
-plt.ylabel("Verdadero")
-plt.show()
-
 
 # División con StratifiedKFold (K-folds)
 skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=22)
@@ -317,7 +208,6 @@ balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
 st.bar_chart(balanced_class_distribution)
 
 
-results_df = best_model
 st.subheader("Model Performance")
 st.write(results_df)
 
