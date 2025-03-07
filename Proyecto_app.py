@@ -294,8 +294,6 @@ st.title("Diabetes Prediction Model Results")
 # Title of the Streamlit app
 st.title("Diabetes Prediction Model Results")
 
-diabetes = diabetes
-
 diabetes['Outcome'] = diabetes['Outcome'].astype(int)
 
 # Show dataset preview
@@ -319,7 +317,7 @@ balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
 st.bar_chart(balanced_class_distribution)
 
 
-results_df = diabetes
+results_df = best_model
 st.subheader("Model Performance")
 st.write(results_df)
 
