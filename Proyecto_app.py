@@ -258,7 +258,11 @@ with tab3:
     neighbors_fit = neighbors.fit(data_scaled)
     distances, indices = neighbors_fit.kneighbors(data_scaled)
 
+
     # Ordenar y graficar las distancias
+    distances = np.sort(distances[:, -1])  # Tomar la última distancia (k-ésimo vecino)
+
+    # Crear imagen
     st.subheader("Gráfico para encontrar Epsilon (k-Distance)")
     fig, ax = plt.subplots()
     ax.plot(distances)
@@ -266,5 +270,5 @@ with tab3:
     ax.set_ylabel(f"Distance to {min_samples}-th Nearest Neighbor")
     ax.set_title("k-Distance Graph for Finding Epsilon")
 
-    # Show the plot in Streamlit
+    # Mostrar gráfico en Streamlit
     st.pyplot(fig)
