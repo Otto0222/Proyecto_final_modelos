@@ -1,5 +1,10 @@
 import kagglehub
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import streamlit as st
+
+# Scikit-learn imports
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
@@ -9,10 +14,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.metrics import accuracy_score, recall_score, confusion_matrix
 from sklearn.inspection import PartialDependenceDisplay
-import seaborn as sns
-import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.neighbors import NearestNeighbors
+
+# Imbalanced learn
 from imblearn.over_sampling import RandomOverSampler
-import streamlit as st
+
 
 # Descargar el dataset de Kaggle (pima-indians-diabetes-database)
 path = kagglehub.dataset_download("uciml/pima-indians-diabetes-database")
