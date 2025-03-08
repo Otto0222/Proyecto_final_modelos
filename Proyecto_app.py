@@ -1,4 +1,4 @@
-import kagglehub
+# import kagglehub
 import pandas as pd
 from sklearn import tree
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, StratifiedKFold
@@ -16,6 +16,7 @@ import streamlit as st
 # Descargar el dataset de Kaggle (pima-indians-diabetes-database)
 path = kagglehub.dataset_download("uciml/pima-indians-diabetes-database")
 
+
 # Cargar el archivo CSV desde el path
 diabetes = pd.read_csv(f"{path}/diabetes.csv", na_values=['?'])
 
@@ -23,41 +24,17 @@ diabetes = pd.read_csv(f"{path}/diabetes.csv", na_values=['?'])
 # Ver la distribución de las clases en la columna 'Outcome' de la base de datos original
 class_distribution = diabetes['Outcome'].value_counts()
 
-# Graficar la distribución de clases
-plt.figure(figsize=(6, 4))
-sns.barplot(x=class_distribution.index, y=class_distribution.values, palette="Blues_d", hue = class_distribution.index)
-plt.title("Distribución de Clases en el Dataset Original")
-plt.xlabel("Clase")
-plt.ylabel("Número de sujetos")
-plt.xticks(ticks=[0, 1], labels=["Sin Diabetes (0)", "Con Diabetes (1)"])
-plt.show()
-
-
-# Mostrar la distribución original de las clases
-print("Distribución original de las clases:")
-print(diabetes['Outcome'].value_counts())
 
 # Filtrar las clases 0 y 1
 class_0 = diabetes[diabetes['Outcome'] == 0]
 class_1 = diabetes[diabetes['Outcome'] == 1]
 
-# Eliminar aleatoriamente 200 ejemplos de la clase 0
-class_0_reduced = class_0.sample(n=len(class_0) - 232, random_state=42)
+# Eliminar aleatoriamente 200 ejemplos de la clase 0 para balancear
+class_0_reduced = class_0.sample(n=len(class_0) - 200, random_state=42)
 
 # Combinar las clases balanceadas
 diabetes_balanced = pd.concat([class_0_reduced, class_1])
 
-# Ver la distribución de clases después de eliminar ejemplos de la clase 0
-print("\nDistribución de las clases después de balancear:")
-print(diabetes_balanced['Outcome'].value_counts())
-
-
-# Manejo de valores nulos (se eliminan filas con NaN)
-diabetes.dropna(inplace=True)
-
-# Separar variables predictoras (X) y variable objetivo (y)
-X = diabetes.drop(columns=['Outcome'])  # 'Outcome' es la variable objetivo
-y = diabetes['Outcome']
 
 # Balanceo de datos
 # Manejo de valores nulos (se eliminan filas con NaN)
@@ -151,16 +128,13 @@ print(f"🏆 Mejor Recall en validación: {best_score:.4f}")
 print(f"📊 Accuracy en test: {test_accuracy:.4f}")
 print(f"🔍 Sensibilidad (Recall) en test: {test_recall:.4f}")
 
+
 # Graficar el árbol de decisión en caso de que este sea el mejor modelo
 if isinstance(best_model, Pipeline):
     # Acceder al árbol de decisión en el pipeline
     tree_model = best_model.named_steps['model']  # 'model' is the step name from the pipeline
 
-    # Graficar el árbol de decisión
-    plt.figure(figsize=(12, 8))  # Adjust the size of the plot
-    plot_tree(tree_model, filled=True, feature_names=X.columns, rounded=True)
-    plt.show()
-    
+
     
 # Mostrar la matriz de confusión del modelo con mejor resultado
 # Matriz de confusión
@@ -169,21 +143,11 @@ cm = confusion_matrix(y_test, y_pred)
 # Obtener el nombre del modelo de best_model
 model_name = best_model.named_steps["model"].__class__.__name__  # Obtener el nombre del modelo
 
-# Mostrar la matriz de confusión con un heatmap
-plt.figure(figsize=(6, 5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "Diabetes"], yticklabels=["No Diabetes", "Diabetes"])
-plt.title(f"Matriz de Confusión de {model_name}")  # Corregir el uso del f-string
-plt.xlabel("Predicción")
-plt.ylabel("Verdadero")
-plt.show()
 
-
+# Crear la aplicación de Streamlit
 # Title of the Streamlit app
 st.title("Diabetes Prediction Model Results")
 
-# Load dataset
-# Title of the Streamlit app
-st.title("Diabetes Prediction Model Results")
 
 diabetes['Outcome'] = diabetes['Outcome'].astype(int)
 
