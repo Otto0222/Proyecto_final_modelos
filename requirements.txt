@@ -7,3 +7,4 @@ matplotlib
 kagglehub
 imblearn
 plotly
+keras
