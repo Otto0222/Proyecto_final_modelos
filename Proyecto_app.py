@@ -1,6 +1,7 @@
 import kagglehub
 import pandas as pd
 import seaborn as sns
+import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 import plotly.express as px
@@ -280,6 +281,7 @@ with tab3:
     dbscan_labels = dbscan.fit_predict(data_scaled)
 
     #Plot DBSCAN
+    st.subheader("Clusters identificados con DBSCAN")
     fig_dbscan = px.scatter(data_pca, 
                             x=data_pca[:,0], 
                             y=data_pca[:,1], 
@@ -290,3 +292,40 @@ with tab3:
 
     st.pyplot(fig_dbscan)
 
+    if 'Outcome' in df.columns:
+        df['DBSCAN_Cluster'] = dbscan_labels  # Agregar la columna de clusters al dataframe
+
+        # Calcular distribución de Outcome por cluster
+        outcome_distribution = df.groupby('DBSCAN_Cluster')['Outcome'].value_counts(normalize=True).unstack()
+
+        # Mostrar tabla en Streamlit
+        st.subheader("Distribución de Outcome por Clúster (DBSCAN)")
+        st.write(outcome_distribution)  # Mostrar tabla en la app
+
+
+    # Agrupar y calcular frecuencia y proporción
+    df_count = df.groupby(["DBSCAN_Cluster", "Outcome"]).size().reset_index(name="Frecuencia")
+    df_total = df.groupby("DBSCAN_Cluster").size().reset_index(name="Total")
+    df_count = df_count.merge(df_total, on="DBSCAN_Cluster")
+    df_count["Proporción"] = df_count["Frecuencia"] / df_count["Total"]
+
+    # Convertir Outcome a string para que Plotly lo trate como categoría
+    df_count["Outcome"] = df_count["Outcome"].astype(str)
+
+    # Crear gráfico interactivo con Plotly
+    fig = px.bar(df_count, 
+                x="DBSCAN_Cluster", 
+                y="Frecuencia", 
+                color="Outcome",
+                text=df_count["Proporción"].apply(lambda x: f"{x:.2%}"),  # Mostrar porcentaje
+                barmode="group",  # Barras agrupadas (lado a lado)
+                labels={"DBSCAN_Cluster": "Clúster DBSCAN", "Frecuencia": "Frecuencia", "Outcome": "Outcome"},
+                title="Distribución de Outcome en Clusters DBSCAN")
+
+    # Mostrar gráfico en Streamlit
+    st.plotly_chart(fig)
+
+    # Interpretación en texto
+    st.write("* DBSCAN identificó un gran grupo de "outliers" (Cluster -1) con un 45% de diabéticos. Esto significa que muchos puntos no se pudieron agrupar bien.")
+    st.write("* El único cluster grande (Cluster 0) tiene un 50-50 de pacientes diabéticos y no diabéticos, lo que indica que DBSCAN no logró encontrar una separación clara entre los grupos.")
+    st.write("No generó múltiples clusters útiles → Podría significar que los datos no tienen agrupaciones naturales bien definidas.")
