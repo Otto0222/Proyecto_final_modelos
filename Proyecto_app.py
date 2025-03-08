@@ -110,23 +110,15 @@ for name, config in models.items():
         best_score = grid_search.best_score_
         best_model = grid_search.best_estimator_
 
-    print(f"✅ {name} - Mejor Recall en CV: {grid_search.best_score_:.4f}")
-
-# Convertir resultados en un DataFrame y mostrar
+# Convertir resultados en un DataFrame
 results_df = pd.DataFrame(results)
-print("\nResultados de los Modelos y Mejores Hiperparámetros:")
-print(results_df)
+
 
 # Evaluar el mejor modelo en el conjunto de prueba
 y_pred = best_model.predict(X_test)
 test_accuracy = accuracy_score(y_test, y_pred)
 test_recall = recall_score(y_test, y_pred)  # Sensibilidad (recall)
 
-# Mostrar resultados finales
-print("\n🎯 Mejor modelo final:", best_model)
-print(f"🏆 Mejor Recall en validación: {best_score:.4f}")
-print(f"📊 Accuracy en test: {test_accuracy:.4f}")
-print(f"🔍 Sensibilidad (Recall) en test: {test_recall:.4f}")
 
 
 # Graficar el árbol de decisión en caso de que este sea el mejor modelo
@@ -148,55 +140,67 @@ model_name = best_model.named_steps["model"].__class__.__name__  # Obtener el no
 # Title of the Streamlit app
 st.title("Diabetes Prediction Model Results")
 
-
-diabetes['Outcome'] = diabetes['Outcome'].astype(int)
-
-# Show dataset preview
-if st.checkbox("Show raw data"):
-    st.write(diabetes.head())
-
-# Class distribution
-st.subheader("Class Distribution in Original Dataset")
-class_distribution = diabetes['Outcome'].value_counts()
-st.bar_chart(class_distribution)
-
-# Balancing dataset
-class_0 = diabetes[diabetes['Outcome'] == 0]
-class_1 = diabetes[diabetes['Outcome'] == 1]
-class_0_reduced = class_0.sample(n=len(class_0) - 200, random_state=42)
-diabetes_balanced = pd.concat([class_0_reduced, class_1])
-
-# Show balanced class distribution
-st.subheader("Class Distribution After Balancing")
-balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
-st.bar_chart(balanced_class_distribution)
+#Create tabs
+tab1, tab2, tab3 = st.tabs(["EDA", "Classification", "Clustering"])
 
 
-st.subheader("Model Performance")
-st.write(results_df)
+#-------------------------------- Tab 1: EDA --------------------------------
+with tab1:
+    st.subheader("📊 Model Results")
+    st.write("Show model performance, accuracy, recall, confusion matrix, etc.")
 
 
-#Decision tree
-st.subheader("Decision tree result")
-# Acceder al árbol de decisión en el pipeline
-tree_model = best_model.named_steps['model']  # 'model' is the step name from the pipeline
+#-------------------------------- Tab 2: Classification --------------------------------
+with tab2:
 
-# Graficar el árbol de decisión
-fig, ax = plt.subplots(figsize=(12, 8))  # Define figure and axis
-plot_tree(tree_model, filled=True, feature_names=X.columns, rounded=True, ax=ax)  # Use ax
-st.pyplot(fig)  # Display in Streamlit
+    diabetes['Outcome'] = diabetes['Outcome'].astype(int)
 
-# Confusion matrix
-st.subheader("Confusion Matrix of Best Model")
-cm = confusion_matrix(y_test, y_pred)
-fig, ax = plt.subplots()
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "Diabetes"], yticklabels=["No Diabetes", "Diabetes"])
-plt.xlabel("Predicted")
-plt.ylabel("Actual")
-st.pyplot(fig)
+    # Show dataset preview
+    if st.checkbox("Show raw data"):
+        st.write(diabetes.head())
 
-# Show accuracy and recall
-st.subheader("Final Model Performance")
-st.write(f"**Best Model:** {model_name}")
-st.write(f"**Accuracy:** {test_accuracy:.4f}")
-st.write(f"**Recall:** {test_recall:.4f}")
+    # Class distribution
+    st.subheader("Class Distribution in Original Dataset")
+    class_distribution = diabetes['Outcome'].value_counts()
+    st.bar_chart(class_distribution)
+
+    # Balancing dataset
+    class_0 = diabetes[diabetes['Outcome'] == 0]
+    class_1 = diabetes[diabetes['Outcome'] == 1]
+    class_0_reduced = class_0.sample(n=len(class_0) - 200, random_state=42)
+    diabetes_balanced = pd.concat([class_0_reduced, class_1])
+
+    # Show balanced class distribution
+    st.subheader("Class Distribution After Balancing")
+    balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
+    st.bar_chart(balanced_class_distribution)
+
+
+    st.subheader("Model Performance")
+    st.write(results_df)
+
+
+    #Decision tree
+    st.subheader("Decision tree result")
+    # Acceder al árbol de decisión en el pipeline
+    tree_model = best_model.named_steps['model']  # 'model' is the step name from the pipeline
+
+    # Graficar el árbol de decisión
+    fig, ax = plt.subplots(figsize=(12, 8))  # Define figure and axis
+    plot_tree(tree_model, filled=True, feature_names=X.columns, rounded=True, ax=ax)  # Use ax
+    st.pyplot(fig)  # Display in Streamlit
+
+    # Confusion matrix
+    st.subheader("Confusion Matrix of Best Model")
+    cm = confusion_matrix(y_test, y_pred)
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "Diabetes"], yticklabels=["No Diabetes", "Diabetes"])
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    st.pyplot(fig)
+
+    # Show accuracy and recall
+    st.subheader("Final Model Performance")
+    st.write(f"**Best Model:** {model_name}")
+    st.write(f"**Accuracy:** {test_accuracy:.4f}")
+    st.write(f"**Recall:** {test_recall:.4f}")
