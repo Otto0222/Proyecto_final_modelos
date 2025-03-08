@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit as st
+import plotly.express as px
 
 # Scikit-learn imports
 from sklearn import tree
@@ -16,6 +17,7 @@ from sklearn.metrics import accuracy_score, recall_score, confusion_matrix
 from sklearn.inspection import PartialDependenceDisplay
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import KMeans, DBSCAN
 
 # Imbalanced learn
 from imblearn.over_sampling import RandomOverSampler
@@ -272,3 +274,19 @@ with tab3:
 
     # Mostrar gráfico en Streamlit
     st.pyplot(fig)
+
+    # Aplicar DBSCAN
+    dbscan = DBSCAN(eps=1.4, min_samples=10)
+    dbscan_labels = dbscan.fit_predict(data_scaled)
+
+    #Plot DBSCAN
+    fig_dbscan = px.scatter(data_pca, 
+                            x=data_pca[:,0], 
+                            y=data_pca[:,1], 
+                            color=dbscan_labels.astype(str),  # Convertir a string para evitar escalas numéricas en la leyenda
+                            title="Clusters Identificados con DBSCAN",
+                            labels={"PC1": "Componente Principal 1", "PC2": "Componente Principal 2", "color": "Cluster DBSCAN"},
+                            opacity=0.7)  # Hacer los puntos semitransparentes para mejor visualización
+
+    st.pyplot(fig_dbscan)
+
