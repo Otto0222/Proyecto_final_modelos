@@ -290,7 +290,7 @@ with tab3:
                             labels={"PC1": "Componente Principal 1", "PC2": "Componente Principal 2", "color": "Cluster DBSCAN"},
                             opacity=0.7)  # Hacer los puntos semitransparentes para mejor visualización
 
-    st.pyplot(fig_dbscan)
+    st.plotly_chart(fig_dbscan)
 
     if 'Outcome' in df.columns:
         df['DBSCAN_Cluster'] = dbscan_labels  # Agregar la columna de clusters al dataframe
