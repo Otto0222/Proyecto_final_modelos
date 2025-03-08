@@ -194,7 +194,7 @@ sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "
 plt.xlabel("Predicted")
 plt.ylabel("Actual")
 st.pyplot(fig)
-}
+
 # Show accuracy and recall
 st.subheader("Final Model Performance")
 st.write(f"**Best Model:** {model_name}")
