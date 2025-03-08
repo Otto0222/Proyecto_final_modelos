@@ -171,7 +171,7 @@ st.subheader("Class Distribution After Balancing")
 balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
 st.bar_chart(balanced_class_distribution)
 
-results_df = pd.DataFrame(results)
+
 st.subheader("Model Performance")
 st.write(results_df)
 
@@ -194,7 +194,7 @@ sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "
 plt.xlabel("Predicted")
 plt.ylabel("Actual")
 st.pyplot(fig)
-
+}
 # Show accuracy and recall
 st.subheader("Final Model Performance")
 st.write(f"**Best Model:** {model_name}")
