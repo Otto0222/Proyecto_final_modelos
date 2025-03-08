@@ -175,15 +175,16 @@ results_df = pd.DataFrame(results)
 st.subheader("Model Performance")
 st.write(results_df)
 
+
 #Decision tree
 st.subheader("Decision tree result")
 # Acceder al árbol de decisión en el pipeline
 tree_model = best_model.named_steps['model']  # 'model' is the step name from the pipeline
 
 # Graficar el árbol de decisión
-plt.figure(figsize=(12, 8))  # Adjust the size of the plot
-fig = plot_tree(tree_model, filled=True, feature_names=X.columns, rounded=True)
-st.pyplot(fig)
+fig, ax = plt.subplots(figsize=(12, 8))  # Define figure and axis
+plot_tree(tree_model, filled=True, feature_names=X.columns, rounded=True, ax=ax)  # Use ax
+st.pyplot(fig)  # Display in Streamlit
 
 # Confusion matrix
 st.subheader("Confusion Matrix of Best Model")
