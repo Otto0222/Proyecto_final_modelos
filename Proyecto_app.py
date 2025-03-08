@@ -14,7 +14,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.metrics import accuracy_score, recall_score, confusion_matrix
+from sklearn.metrics import accuracy_score, recall_score, confusion_matrix, silhouette_score
 from sklearn.inspection import PartialDependenceDisplay
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
@@ -323,9 +323,76 @@ with tab3:
                 title="Distribución de Outcome en Clusters DBSCAN")
 
     # Mostrar gráfico en Streamlit
+    st.subheader("Distribución de Outcome en Clusters DBSCAN")
     st.plotly_chart(fig)
 
     # Interpretación en texto
-    st.write("* DBSCAN identificó un gran grupo de "outliers" (Cluster -1) con un 45% de diabéticos. Esto significa que muchos puntos no se pudieron agrupar bien.")
+    st.write("* DBSCAN identificó un gran grupo de 'outliers' (Cluster -1) con un 45% de diabéticos. Esto significa que muchos puntos no se pudieron agrupar bien.")
     st.write("* El único cluster grande (Cluster 0) tiene un 50-50 de pacientes diabéticos y no diabéticos, lo que indica que DBSCAN no logró encontrar una separación clara entre los grupos.")
     st.write("No generó múltiples clusters útiles → Podría significar que los datos no tienen agrupaciones naturales bien definidas.")
+
+
+    # Evaluación de K-Means con diferentes números de clusters
+    k_values = range(2, 10)
+    silhouette_scores = []
+
+    for k in k_values:
+        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+        labels = kmeans.fit_predict(data_scaled)
+        silhouette = silhouette_score(data_scaled, labels)
+        silhouette_scores.append(silhouette)
+
+    # Mostrar gráfica en Streamlit
+    st.subheader("Evaluación de K-Means con diferentes Clusters")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(k_values, silhouette_scores, marker='o', linestyle='-')
+    ax.set_xlabel('Número de Clusters')
+    ax.set_ylabel('Silhouette Score')
+    ax.set_title('Evaluación de K-Means')
+    st.pyplot(fig)
+
+    # Aplicar K-Means con el mejor número de clusters encontrado
+    best_k = k_values[silhouette_scores.index(max(silhouette_scores))]
+    kmeans = KMeans(n_clusters=best_k, random_state=42, n_init=10)
+    kmeans_labels = kmeans.fit_predict(data_scaled)
+
+    # Visualización de Clusters con PCA
+    st.subheader(f"Clusters Identificados con K-Means (k={best_k})")
+    fig_pca = px.scatter(
+        x=data_pca[:, 0], 
+        y=data_pca[:, 1], 
+        color=kmeans_labels.astype(str),
+        title=f"Clusters Identificados con K-Means (k={best_k})",
+        labels={"color": "Cluster K-Means"}
+    )
+    st.plotly_chart(fig_pca)
+
+    # Relación entre los clusters y la variable Outcome si está disponible
+    if 'Outcome' in df.columns:
+        df['KMeans_Cluster'] = kmeans_labels
+
+        st.subheader("Distribución de Outcome por Clúster (K-Means)")
+        df_kmeans_count = df.groupby(["KMeans_Cluster", "Outcome"]).size().reset_index(name="Frecuencia")
+        df_kmeans_total = df.groupby("KMeans_Cluster").size().reset_index(name="Total")
+        df_kmeans_count = df_kmeans_count.merge(df_kmeans_total, on="KMeans_Cluster")
+        df_kmeans_count["Proporción"] = df_kmeans_count["Frecuencia"] / df_kmeans_count["Total"]
+        df_kmeans_count["Outcome"] = df_kmeans_count["Outcome"].astype(str)
+
+        # Crear gráfico de barras con proporciones
+        fig_kmeans_dist = px.bar(
+            df_kmeans_count, 
+            x="KMeans_Cluster", 
+            y="Frecuencia", 
+            color="Outcome",
+            text=df_kmeans_count["Proporción"].apply(lambda x: f"{x:.2%}"),
+            barmode="group",
+            labels={"KMeans_Cluster": "Clúster K-Means", "Frecuencia": "Frecuencia", "Outcome": "Outcome"},
+            title="Distribución de Outcome en Clusters K-Means"
+        )
+        st.plotly_chart(fig_kmeans_dist)
+
+    # Análisis de características por cluster
+    st.subheader("Promedios de características por cluster (K-Means)")
+    cluster_means = pd.DataFrame(data_scaled, columns=df.drop(columns=['Outcome', 'KMeans_Cluster', 'DBSCAN_Cluster'], errors='ignore').columns)
+    cluster_means['KMeans_Cluster'] = kmeans_labels
+    st.dataframe(cluster_means.groupby('KMeans_Cluster').mean())
