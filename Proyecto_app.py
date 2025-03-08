@@ -167,13 +167,22 @@ with tab2:
     diabetes['Outcome'] = diabetes['Outcome'].astype(int)
 
     # Show dataset preview
-    if st.checkbox("Show raw data"):
+    if st.checkbox("Mostrar dataframe"):
         st.write(diabetes.head())
 
     # Class distribution
-    st.subheader("Class Distribution in Original Dataset")
+    st.subheader("Distribución de clases en Dataset original")
     class_distribution = diabetes['Outcome'].value_counts()
     st.bar_chart(class_distribution)
+
+    st.markdown("## Balanceo de Datos")
+
+    st.markdown("""
+    Al observar la distribución de las clases en el dataset, se puede notar que los datos están desbalanceados, habiendo casi el doble de sujetos **sin diabetes** que **con diabetes**.  
+
+    Debido a esto, se utiliza la técnica de **undersampling**, seleccionando una muestra aleatoria de los sujetos **sin diabetes** y tomando a todos los sujetos **con diabetes** para construir un nuevo dataset, de forma que ambas clases tengan el mismo número de sujetos.
+    """)
+
 
     # Balancing dataset with undersampling
     class_0 = diabetes[diabetes['Outcome'] == 0]
@@ -182,17 +191,40 @@ with tab2:
     diabetes_balanced = pd.concat([class_0_reduced, class_1])
 
     # Show balanced class distribution
-    st.subheader("Class Distribution After Balancing")
+    st.subheader("Distribución de clases tras aplicar balanceo (undersampling)")
     balanced_class_distribution = diabetes_balanced['Outcome'].value_counts()
     st.bar_chart(balanced_class_distribution)
 
-
-    st.subheader("Model Performance")
+    
+    # Tabla de desempeño
+    st.subheader("Desempeño del modelo")
     st.write(results_df)
+
+    
+    st.markdown("### Cross Validation")
+
+    st.markdown("""
+    Para la validación se utilizó el método de **Stratified K-Fold**, que divide los datos en *k* conjuntos.  
+    El modelo se entrena *k* veces, cambiando en cada iteración el subconjunto utilizado para evaluación.  
+    Se usó una división del **80/20** para los datos de entrenamiento y prueba.
+    """)
+
+    st.markdown("### Modelos de Clasificación")
+
+    st.markdown("""
+    Se entrenaron **tres modelos de clasificación** para este proceso:
+
+    - **Regresión Logística**: Estima la probabilidad de que un elemento pertenezca a una de dos clases (*diabético* o *no diabético*).  
+    - **Árbol de Clasificación**: Separa los datos en *subsets* basados en el valor de características específicas, obteniendo al final grupos de elementos con características similares.  
+    - **Random Forest**: Construye múltiples árboles de clasificación, donde cada árbol emite una predicción, y la clase más frecuente es la decisión final del modelo.  
+
+    El algoritmo guarda los resultados obtenidos con cada modelo y muestra **el mejor resultado**.
+    """)
+
 
 
     #Decision tree
-    st.subheader("Decision tree result")
+    st.subheader("Resultado - Árbol de clasificación")
     # Acceder al árbol de decisión en el pipeline
     tree_model = best_model.named_steps['model']  # 'model' is the step name from the pipeline
 
@@ -202,7 +234,7 @@ with tab2:
     st.pyplot(fig)  # Display in Streamlit
 
     # Confusion matrix
-    st.subheader("Confusion Matrix of Best Model")
+    st.subheader("Matriz de confusión del mejor modelo")
     cm = confusion_matrix(y_test, y_pred)
     fig, ax = plt.subplots()
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["No Diabetes", "Diabetes"], yticklabels=["No Diabetes", "Diabetes"])
@@ -211,19 +243,35 @@ with tab2:
     st.pyplot(fig)
 
     # Show accuracy and recall
-    st.subheader("Final Model Performance")
-    st.write(f"**Best Model:** {model_name}")
+    st.subheader("Desempeño del modelo final")
+    st.write(f"**Mejor modelo:** {model_name}")
     st.write(f"**Accuracy:** {test_accuracy:.4f}")
     st.write(f"**Recall:** {test_recall:.4f}")
 
+    st.markdown("### Mejor Modelo y Resultados")
 
-#-------------------------------- Tab 1: EDA --------------------------------
+    st.markdown("""
+    El mejor resultado obtenido fue con un **Árbol de Clasificación**, logrando una precisión de **0.8213**.
+
+    En las hojas del árbol se observan varios valores altos de **entropía**, lo que indica que hay muestras mezcladas.  
+    Esto puede reducir la certeza en la clasificación.  
+
+    Sin embargo, también existen hojas con valores bajos o incluso **entropía = 0**, lo que sugiere nodos más puros.  
+    En estos casos, el modelo puede clasificar nuevos datos con mayor confianza.
+
+    ### Matriz de Confusión  
+    La mayoría de los datos fueron correctamente clasificados, aunque se presentaron algunos errores.  
+    En particular, hay **falsos positivos** (casos incorrectamente clasificados como diabéticos).  
+    """)
+
+
+#-------------------------------- Tab 3: Clustering --------------------------------
 with tab3:
     
     dataset = diabetes
     
     # Class distribution
-    st.subheader("Class Distribution in Original Dataset")
+    st.subheader("Distribución de clases en Dataset original")
     class_distribution = diabetes['Outcome'].value_counts()
     st.bar_chart(class_distribution)
 
@@ -323,7 +371,6 @@ with tab3:
                 title="Distribución de Outcome en Clusters DBSCAN")
 
     # Mostrar gráfico en Streamlit
-    st.subheader("Distribución de Outcome en Clusters DBSCAN")
     st.plotly_chart(fig)
 
     # Interpretación en texto
@@ -396,3 +443,34 @@ with tab3:
     cluster_means = pd.DataFrame(data_scaled, columns=df.drop(columns=['Outcome', 'KMeans_Cluster', 'DBSCAN_Cluster'], errors='ignore').columns)
     cluster_means['KMeans_Cluster'] = kmeans_labels
     st.dataframe(cluster_means.groupby('KMeans_Cluster').mean())
+
+
+    #Conclusiones
+    st.subheader("Conclusiones")
+
+    st.markdown("""
+    **En conclusión:**
+    * K-Means es mejor que DBSCAN en este caso porque logra formar grupos más interpretables de riesgo bajo, intermedio y alto de diabetes.
+    * DBSCAN no encontró clusters útiles y clasificó muchos puntos como outliers, lo que sugiere que los datos no tienen una estructura de agrupación clara.
+
+    Luego de obtener la distribución y el Silhouette Score de cada evaluación del algoritmo en k entre 2 y 9, se confirma visualmente que el valor más óptimo, en este caso, es k=3.
+
+    Posterior a encontrar el mejor k, se aplica nuevamente K-Means, se visualiza con PCA y se evalúa nuevamente la relación entre Outcome y los Clusters, encontrando lo siguiente:
+
+    * Los clusters están separados, sin embargo, hay solapamiento en algunas áreas. Adicionalmente, el cluster amarillo parece estar en el centro, conectando los otros dos clusters.
+
+    ### **Proporción de diabéticos y no diabéticos por clusters:**
+      - **Cluster 0:** 68.29% diabéticos (Outcome=1) → **Grupo de alto riesgo**.
+      - **Cluster 1:** 60.00% diabéticos → **Grupo intermedio**.
+      - **Cluster 2:** 37.21% diabéticos → **Grupo de bajo riesgo**.
+
+    El clustering logró separar parcialmente los grupos de alto y bajo riesgo. Sin embargo, Cluster 1 y Cluster 2 están algo mezclados, lo que indica que algunos pacientes tienen características comunes.
+
+    ### **Características Promedio por Cluster:**
+    ✅ **Cluster 0 (alto riesgo de diabetes):** Contiene la mayor cantidad de embarazos (Pregnancies=0.92), mayor glucosa (Glucose=0.37) y mayor presión arterial (BloodPressure=0.39).  
+    ✅ **Cluster 1 (intermedio):** Glucosa y BMI están en valores intermedios y la presión arterial es más baja que en los otros clusters.  
+    ✅ **Cluster 2 (bajo riesgo de diabetes):** Contiene la menor cantidad de embarazos (Pregnancies=-0.58) y menores valores de glucosa y BMI.
+
+    El clustering tiene sentido porque el grupo de alto riesgo tiene mayor glucosa y mayor cantidad de embarazos, que son factores de riesgo conocidos para la diabetes.
+    El grupo de bajo riesgo tiene menores niveles en estas variables. El grupo intermedio tiene características mixtas.
+    """)
