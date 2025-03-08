@@ -8,13 +8,13 @@ import plotly.express as px
 
 # Scikit-learn imports
 from sklearn import tree
-from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit, StratifiedKFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier, plot_tree
-from sklearn.metrics import accuracy_score, recall_score, confusion_matrix, silhouette_score
+from sklearn.metrics import accuracy_score, recall_score, confusion_matrix, silhouette_score, classification_report
 from sklearn.inspection import PartialDependenceDisplay
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
@@ -22,6 +22,10 @@ from sklearn.cluster import KMeans, DBSCAN
 
 # Imbalanced learn
 from imblearn.over_sampling import RandomOverSampler
+
+# Keras
+from keras.models import Sequential
+from keras.layers import Dense
 
 
 # Descargar el dataset de Kaggle (pima-indians-diabetes-database)
@@ -157,8 +161,57 @@ tab1, tab2, tab3 = st.tabs(["EDA", "Classification", "Clustering"])
 
 #-------------------------------- Tab 1: EDA --------------------------------
 with tab1:
-    st.subheader("📊 Model Results")
-    st.write("Show model performance, accuracy, recall, confusion matrix, etc.")
+    data = diabetes
+
+    
+    st.markdown("## Exploración de Datos")
+
+    # Histograma de las variables numéricas
+    st.subheader("Histograma de las Variables Numéricas")
+    fig_hist, ax_hist = plt.subplots(figsize=(15, 10))
+    data.hist(bins=15, ax=ax_hist, color='skyblue', edgecolor='black')
+    plt.tight_layout()
+    st.pyplot(fig_hist)
+
+    # Boxplot para detectar valores atípicos
+    st.subheader("Boxplot para Detectar Valores Atípicos")
+    fig_box, ax_box = plt.subplots(figsize=(15, 10))
+    sns.boxplot(data=data, palette="Set2", ax=ax_box)
+    ax_box.set_title("Boxplot para Detectar Valores Atípicos")
+    st.pyplot(fig_box)
+
+
+
+    st.markdown("## Distribución de la Variable Outcome")
+
+    # Gráfico de barras para visualizar la distribución de Outcome
+    st.subheader("Conteo de Casos de Diabetes y No Diabetes")
+    fig_outcome, ax_outcome = plt.subplots(figsize=(6, 4))
+    sns.countplot(x='Outcome', data=data, palette='Set1', ax=ax_outcome)
+    ax_outcome.set_title("Distribución de la Variable Outcome")
+    st.pyplot(fig_outcome)
+
+    # Mostrar los valores de la distribución
+    class_counts = data['Outcome'].value_counts()
+    st.write("### Distribución de las clases en Outcome:")
+    st.write(class_counts)
+
+
+
+    st.markdown("## Matriz de Correlación")
+
+    # Crear la matriz de correlación y el heatmap
+    fig_corr, ax_corr = plt.subplots(figsize=(10, 8))
+    correlation_matrix = data.corr()
+    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5, ax=ax_corr)
+    ax_corr.set_title("Matriz de Correlación entre las Variables")
+
+    # Mostrar en Streamlit
+    st.pyplot(fig_corr)
+
+
+
+
 
 
 #-------------------------------- Tab 2: Classification --------------------------------
