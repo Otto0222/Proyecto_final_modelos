@@ -11,6 +11,7 @@ from sklearn.metrics import accuracy_score, recall_score, confusion_matrix
 from sklearn.inspection import PartialDependenceDisplay
 import seaborn as sns
 import matplotlib.pyplot as plt
+from imblearn.over_sampling import RandomOverSampler
 import streamlit as st
 
 # Descargar el dataset de Kaggle (pima-indians-diabetes-database)
@@ -164,7 +165,7 @@ with tab2:
     class_distribution = diabetes['Outcome'].value_counts()
     st.bar_chart(class_distribution)
 
-    # Balancing dataset
+    # Balancing dataset with undersampling
     class_0 = diabetes[diabetes['Outcome'] == 0]
     class_1 = diabetes[diabetes['Outcome'] == 1]
     class_0_reduced = class_0.sample(n=len(class_0) - 200, random_state=42)
@@ -204,3 +205,59 @@ with tab2:
     st.write(f"**Best Model:** {model_name}")
     st.write(f"**Accuracy:** {test_accuracy:.4f}")
     st.write(f"**Recall:** {test_recall:.4f}")
+
+
+#-------------------------------- Tab 1: EDA --------------------------------
+with tab3:
+    
+    dataset = diabetes
+    
+    # Class distribution
+    st.subheader("Class Distribution in Original Dataset")
+    class_distribution = diabetes['Outcome'].value_counts()
+    st.bar_chart(class_distribution)
+
+    #Balancear los datos con oversampling
+    oversampler = RandomOverSampler(random_state=42)
+    X_resampled, y_resampled = oversampler.fit_resample(dataset.drop(columns=['Outcome']), dataset['Outcome'])
+
+    # Crear un nuevo DataFrame equilibrado
+    df = pd.DataFrame(X_resampled, columns=dataset.drop(columns=['Outcome']).columns)
+    df['Outcome'] = y_resampled
+
+    #Shows the pairplot of the variables 
+    st.subheader("variables - pairplot")
+    fig = sns.pairplot(df, hue="Outcome")
+    st.pyplot(fig)
+
+    #Eliminar variables con poco peso
+    df = df.drop(columns=['SkinThickness', 'Insulin', 'DiabetesPedigreeFunction'])  # Eliminar variables del dataframe
+
+
+    scaler = StandardScaler()
+    data_scaled = scaler.fit_transform(df.drop(columns=['Outcome'], errors='ignore'))
+
+
+    # Reducción de dimensionalidad con PCA para visualización
+    pca = PCA(n_components=2)
+    data_pca = pca.fit_transform(data_scaled)
+
+
+    # Definir min_samples (prueba con 5 o 10)
+    min_samples = 10
+
+    # Calcular las distancias al k-ésimo vecino más cercano
+    neighbors = NearestNeighbors(n_neighbors=min_samples)
+    neighbors_fit = neighbors.fit(data_scaled)
+    distances, indices = neighbors_fit.kneighbors(data_scaled)
+
+    # Ordenar y graficar las distancias
+    st.subheader("Gráfico para encontrar Epsilon (k-Distance)")
+    fig, ax = plt.subplots()
+    ax.plot(distances)
+    ax.set_xlabel("Sorted Points")
+    ax.set_ylabel(f"Distance to {min_samples}-th Nearest Neighbor")
+    ax.set_title("k-Distance Graph for Finding Epsilon")
+
+    # Show the plot in Streamlit
+    st.pyplot(fig)
